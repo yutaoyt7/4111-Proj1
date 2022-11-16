@@ -1,0 +1,31 @@
+<html lang="en">
+<body>
+<header>
+  <h1>Univited users for {{event_title}} page:{{page_num}}</h1>
+</header>
+{% for user in uninvite%}
+    <form float: left action = "/inviteuser" method = "post">
+        <input type="hidden" name='event_title' value={{event_title}}>
+        <p>{{user['name']}}
+        <input type = "hidden" name = "uid"  value = {{user['uid']}}>
+        <input type = "hidden" name = "eid"  value = {{eid}}>
+        <input type = "hidden" name = "page_num" value = {{page_num}}>
+        <input type = "submit" value = "invite">
+    </p>
+</form>
+{% endfor %}
+<form action = "/inviteuserpage" method = "post">
+<input type = "hidden" name = "eid"  value = {{eid}}>
+<input type="hidden" name='event_title' value={{event_title}}>
+{% for n in count %}
+<input type="submit" name='page_num' value={{n}}>
+{% endfor %}
+</form>
+<form>
+    <input type="button" value="Return" onclick="history.back()">
+   </form>
+<form action="/success" method="post">
+    <input type="submit" value="home">
+</form>
+</body>
+</html>

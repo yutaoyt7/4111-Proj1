@@ -16,12 +16,11 @@ from flask import (Flask, Response, abort, flash, g, redirect, render_template,
                    request, session)
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
+from sqlalchemy.exc import IntegrityError
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 genders = ['Female', 'Male', 'Non-binary', 'NA']
-myprofile=dict()
-
 
 
 # XXX: The Database URI should be in the format of: 
@@ -90,7 +89,7 @@ def reset():
   session['genders']=genders
   session['signup']=dict()
   session['modifyprofile']=dict()
-  session['myprofile']=dict()
+  session['myevent'] = dict()
 
 @app.route('/')
 def home():
@@ -153,6 +152,137 @@ def chat():
     Liked=True
   return render_template('chat.html', **dict([('messages',messages),('other',other),("Liked",Liked)]))
 
+@app.route("/events", methods=['Post'])
+def events():
+    if not session.get('uid') or session['uid']=='':
+        return home()
+    startevents_query = "SELECT * FROM Started_events WHERE uid=(%s) ORDER BY event_date"
+    sharedevents_query = "SELECT * FROM Shared_events SH, Started_events ST WHERE SH.invitee=(%s) AND SH.eid = ST.eid ORDER BY event_date"
+    dat=(session['uid'],)
+    startevents = g.conn.execute(startevents_query, dat).fetchall()
+    sharedevents =  g.conn.execute(sharedevents_query, dat).fetchall()
+    #count_start = int(g.conn.execute(get_startevents_count_query,dat).fetchone()['count'])//7
+    #count_shared = int(g.conn.execute(get_startevents_count_query,dat).fetchone()['count'])//7
+    #count = count_start+count_shared
+    data = dict([("sharedevents",sharedevents),("startevents",startevents)])
+    return render_template('events.html',**data)
+
+@app.route("/deleteevent", methods = ['POST'])
+def deleteevent():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  delete_query="DELETE FROM Started_events WHERE eid=(%s)"
+  g.conn.execute(delete_query, (request.form['eid'],))
+  return events()
+
+@app.route("/addevent", methods = ['POST'])
+def addevent():
+    if not session.get('uid') or session['uid']=='':
+        return home()
+    get_next_eid_query = "SELECT max(eid)+1 as eid FROM Started_events;"
+    eid = g.conn.execute(get_next_eid_query).fetchone()['eid']
+    send_query="INSERT INTO Started_events VALUES ((%s),(%s),(%s),(%s),(%s),(%s));"
+    data=(eid, request.form['event_title'], session['uid'],"","",request.form['event_date'],)
+    g.conn.execute(send_query,data)
+    return events()
+
+@app.route("/viewstartevent", methods=['POST'])
+def starteventpage():
+    if not session.get('uid') or session['uid']=='':
+      return home()
+    get_startevent_query = "SELECT * FROM Started_events WHERE eid = (%s) and uid= (%s)"
+    get_participant_query = "SELECT users.name as invitee, users.uid as uid FROM Shared_events SH, Started_events ST, users WHERE ST.eid = (%s) AND SH.eid = ST.eid AND users.uid = SH.invitee"
+    data = (request.form['eid'],session['uid'])
+    startevent = g.conn.execute(get_startevent_query, data).fetchone()
+    data = (request.form['eid'],)
+    get_participant = g.conn.execute(get_participant_query, data).fetchall()
+    data = dict([("startevent",startevent),("get_participant",get_participant)])
+    return render_template('view_startevent.html', **data)
+
+@app.route("/viewsharedevent", methods=['POST'])
+def viewsharedevent():
+    if not session.get('uid') or session['uid']=='':
+      return home()
+    get_sharedevent_query = "SELECT SH.eid as eid, ST.event_title as event_title, ST.location as location, ST.description as description, users.name as name, ST.event_date as event_date FROM Shared_events SH, Started_events ST, users WHERE SH.invitee=(%s) AND ST.eid = (%s) AND SH.eid = ST.eid AND users.uid = ST.uid ORDER BY event_date"
+    get_participant_query = "SELECT users.name as invitee, users.uid as uid FROM Shared_events SH, Started_events ST, users WHERE ST.eid = (%s) AND SH.eid = ST.eid AND users.uid = SH.invitee"
+    data = (session['uid'],request.form['eid'],)
+    sharedevent = g.conn.execute(get_sharedevent_query, data).fetchone()
+    data = (request.form['eid'],)
+    get_participant = g.conn.execute(get_participant_query, data).fetchall()
+    data = dict([("sharedevent",sharedevent),("get_participant",get_participant)])
+    return render_template('view_sharedevent.html', **data)
+
+@app.route("/modifymyeventpage", methods=['POST'])
+def modifymyeventpage():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  get_startevent_query = "SELECT * FROM Started_events WHERE eid = (%s) and uid= (%s)"
+  data = (request.form['eid'],session['uid'])
+  startevent = g.conn.execute(get_startevent_query, data).fetchone()
+  data = dict([("startevent",startevent)])
+  return render_template('modify_startevent.html',**data)
+
+@app.route("/modifystartevent", methods=['POST'])
+def modifystartevent():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  get_startevent_query = "SELECT * FROM Started_events WHERE eid = (%s) and uid= (%s)"
+  data = (request.form['eid'],session['uid'])
+  startevent = g.conn.execute(get_startevent_query, data).fetchone()
+  if not len(request.form['event_title'])==0:
+    event_title=request.form['event_title']
+  else:
+    event_title = startevent['event_title']
+  if not len(request.form['event_date'])==0:
+    event_date=request.form['event_date']
+  else:
+    event_date = startevent['event_date']
+  if not len(request.form['description'])==0:
+    description=request.form['description']
+  else:
+    description = startevent['description']
+  if not len(request.form['location'])==0:
+    location=request.form['location']
+  else:
+    location = startevent['location']
+  modify_query="UPDATE Started_events SET event_title=(%s), description=(%s), location=(%s),event_date=(%s) WHERE uid=(%s);"
+  data= (event_title, description, location, event_date, session['uid'],)
+  g.conn.execute(modify_query,data)
+  return render_template('success.html')
+ 
+@app.route("/inviteuserpage", methods=['POST'])
+def inviteuserpage():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  get_uninvite_count_query = "SELECT COUNT (*) FROM users WHERE NOT uid=(%s) AND uid NOT IN (SELECT invitee FROM shared_events WHERE eid=(%s))"
+  get_uninvite_query = "SELECT * FROM users WHERE NOT uid=(%s) AND uid NOT IN (SELECT invitee FROM shared_events WHERE eid=(%s)) LIMIT 7 OFFSET (%s)"
+  offset = 0 
+  try:
+    offset = int(request.form['page_num'])
+  except:
+    pass
+  count = int(g.conn.execute(get_uninvite_count_query, (session['uid'],int(request.form['eid']),)).fetchone()['count'])//7
+  data = ( session['uid'],int(request.form['eid']),offset*7,)
+  uninvite = g.conn.execute(get_uninvite_query, data).fetchall()
+  data = dict([('uninvite',uninvite),('count',list(range(0,count+1))),('page_num',offset),('eid',request.form['eid']),('event_title',request.form['event_title'])])
+  return render_template('invite_user.html', **data)
+
+@app.route("/inviteuser", methods=['POST'])
+def inviteuser():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  invite_query ="INSERT INTO shared_events VALUES ((%s),(%s))"
+  g.conn.execute(invite_query,(int(request.form['eid']),int(request.form['uid']),))
+  return inviteuserpage()
+
+@app.route("/uninvite", methods=['POST'])
+def uninvite():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  delete_query="DELETE FROM Shared_events WHERE eid=(%s) AND invitee = (%s) "
+  g.conn.execute(delete_query, (request.form['eid'],request.form['uid'],))
+  return starteventpage()
+
 @app.route("/logout", methods=['POST'])
 def logout():
   session['uid']=''
@@ -166,29 +296,52 @@ def signuppage():
 def myprofilepage():
   if not session.get('uid') or session['uid']=='':
     return home()
-  reset()
   login_query="SELECT * FROM users WHERE uid=(%s);"
   data=(session['uid'],)
   cursor=g.conn.execute(login_query,data)
   row = cursor.fetchone()
-  session['myprofile']['username'] = row['name']
-  session['myprofile']['password'] = row['passwd']
-  session['myprofile']['uid']=row['uid']
-  session['myprofile']['gender'] =  row['gender']
-  session['myprofile']['self_desc']= row['self_description']
-  session['myprofile']['city']=row['city'] 
-  session['myprofile']['bday'] = row['birthday']
-  session['myprofile']['pgender']=row['p_gender']
-  session['myprofile']['pcity']=row['p_city']
-  session['myprofile']['page'] = row['p_age']
-  session['myprofile']['genders']=genders
-  return render_template('my_profile_page.html',**session['myprofile'])
+  myprofile=dict()
+  myprofile['username'] = row['name']
+  myprofile['password'] = row['passwd']
+  myprofile['uid']=row['uid']
+  myprofile['gender'] =  row['gender']
+  myprofile['self_desc']= row['self_description']
+  myprofile['city']=row['city'] 
+  myprofile['bday'] = row['birthday']
+  myprofile['pgender']=row['p_gender']
+  myprofile['pcity']=row['p_city']
+  myprofile['page'] = row['p_age']
+  myprofile['genders']=genders
+  return render_template('my_profile_page.html',**myprofile)
+
+@app.route("/likedinfo", methods=['POST'])
+def people_like():
+    if not session.get('uid') or session['uid']=='':
+      return home()
+    people_like_me_query = "SELECT name, uid FROM Users WHERE uid in (SELECT A_uid as uid FROM Liked, Users WHERE Liked.B_uid = Users.uid AND Users.uid = (%s))"
+    people_liked_query = "SELECT name, uid FROM Users WHERE uid in (SELECT B_uid as uid FROM Liked, Users WHERE Liked.A_uid = Users.uid AND Users.uid = (%s))"
+    data=(session['uid'],)
+    people_liked = g.conn.execute(people_like_me_query,data).fetchall()
+    liked_people = g.conn.execute(people_liked_query,data).fetchall()
+    data = dict([('people_liked',people_liked),("liked_people",liked_people)])
+    return render_template('likedinfo.html', **data)
+
+@app.route("/presentinfo", methods=['POST'])
+def presents_received_sent():
+    if not session.get('uid') or session['uid']=='':
+      return home()
+    presents_sent_query = "SELECT U2.name as receiver, U2.uid as receiver_id, U1.name as sender, P.p_type, P.num_sent, P.time_sent FROM Presents_send_receive P, Users U1, Users U2 WHERE P.sender = (%s) AND P.sender = U1.uid AND P.receiver = U2.uid"
+    presents_received_query = "SELECT U2.name as sender, U1.name as receiver, U2.uid as sender_id, P.p_type, P.num_sent, P.time_sent FROM Presents_send_receive P, Users U1, Users U2 WHERE P.receiver = (%s) AND P.receiver = U1.uid AND P.sender = U2.uid"
+    data=(session['uid'],)
+    presents_received = g.conn.execute(presents_received_query,data).fetchall()
+    presents_sent = g.conn.execute(presents_sent_query,data).fetchall()
+    data = dict([('presents_received',presents_received),("presents_sent",presents_sent)])
+    return render_template('presentinfo.html', **data)
 
 @app.route("/getuserinformation", methods=['POST'])
 def getuserinformation():
   if not session.get('uid') or session['uid']=='':
     return home()
-  reset()
   login_query="SELECT * FROM users WHERE uid=(%s);"
   data=(request.form['uid'],)
   cursor=g.conn.execute(login_query,data)
@@ -223,6 +376,59 @@ def userspage():
   count=int(g.conn.execute(get_users_count_query,(session['uid'],)).fetchone()['count'])//7
   data=dict([('users',users),('count',list(range(0,count+1))),('page_num',offset)])
   return render_template('users.html', **data)
+
+@app.route("/likeuser", methods=['POST'])
+def likeuser():
+    if not session.get('uid') or session['uid']=='':
+      return home()
+    increment_like_query = "INSERT INTO Liked VALUES ((%s), (%s));"
+    data = (session['uid'],request.form['uid'],)
+    try:
+        g.conn.execute(increment_like_query,data)
+    except IntegrityError:
+        return render_template('already_liked.html')
+    return render_template('liked_sent.html')
+
+@app.route("/removelikes", methods=['POST'])
+def removelikes():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  delete_query="DELETE FROM Liked WHERE A_uid=(%s) AND B_uid = (%s) "
+  g.conn.execute(delete_query, (session['uid'],request.form['uid'],))
+  return people_like()
+
+@app.route("/sendpresentpage",methods = ['POST'])
+def sendpresentpage():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  receiver_info = dict([('uid',request.form['uid']),('name',request.form['username'])])
+  return render_template('send_presents.html',**dict([('receiver_info',receiver_info)]))
+
+@app.route("/sendpresent",methods = ['POST'])
+def send_present():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  get_next_prid_query = "SELECT max(prid)+1 as prid FROM Presents_send_receive;"
+  cursor=g.conn.execute(get_next_prid_query)
+  row = cursor.fetchone()
+  prid=row['prid']
+  send_present_query = "INSERT INTO Presents_send_receive VALUES ((%s),(%s),(%s),(%s),(%s),(%s))"
+  data = (prid, session['uid'],request.form['uid'],'now',request.form['num_sent'], request.form['present'],)
+  g.conn.execute(send_present_query,data)
+  try:
+    g.conn.execute("INSERT INTO Liked VALUES ((%s),(%s));",(session["uid"],int(request.form['uid']),))
+  except:
+    pass
+
+  return render_template('liked_sent.html')
+
+@app.route("/unsendpresent", methods=['POST'])
+def unsendpresent():
+  if not session.get('uid') or session['uid']=='':
+    return home()
+  delete_query="DELETE FROM Presents_send_receive WHERE sender=(%s) AND receiver = (%s) "
+  g.conn.execute(delete_query, (session['uid'],request.form['uid'],))
+  return presents_received_sent()
 
 @app.route("/posts", methods=['POST'])
 def posts():
@@ -330,14 +536,31 @@ def modifymyprofile():
     session['modifyprofile']['short_password'] = True
     return modifymyprofilepage()
   
-  username=session['myprofile']['username']
+  login_query="SELECT * FROM users WHERE uid=(%s);"
+  data=(session['uid'],)
+  cursor=g.conn.execute(login_query,data)
+  row = cursor.fetchone()
+  myprofile=dict()
+  myprofile['username'] = row['name']
+  myprofile['password'] = row['passwd']
+  myprofile['uid']=row['uid']
+  myprofile['gender'] =  row['gender']
+  myprofile['self_desc']= row['self_description']
+  myprofile['city']=row['city'] 
+  myprofile['bday'] = row['birthday']
+  myprofile['pgender']=row['p_gender']
+  myprofile['pcity']=row['p_city']
+  myprofile['page'] = row['p_age']
+  myprofile['genders']=genders
+
+  username=myprofile['username']
   if not len(request.form['username'])==0:
     username=request.form['username']
   
-  password=session['myprofile']['password']
+  password=myprofile['password']
   if not len(request.form['password'])==0:
     password=request.form['password']
-  if not session['myprofile']['username']==username or not session['myprofile']['password']==password:
+  if not myprofile['username']==username or not myprofile['password']==password:
     check_query="SELECT * FROM users WHERE name=(%s) AND passwd=(%s);"
     data=(username, password,)
     cursor=g.conn.execute(check_query,data)
@@ -345,32 +568,32 @@ def modifymyprofile():
     if  row:
       session['modifyprofile']['dup_name_password'] = True
       return render_template('modify_myprofile.html')
-  session['myprofile']['username']=username
-  session['myprofile']['password']=password
+  myprofile['username']=username
+  myprofile['password']=password
 
   if not request.form['gender']=='-1':
-    session['myprofile']['gender']=int(request.form['gender'])
+    myprofile['gender']=int(request.form['gender'])
 
   if not len(request.form['self_desc'])==0:
-    session['myprofile']['self_desc']=request.form['self_desc']
+    myprofile['self_desc']=request.form['self_desc']
 
   if not len(request.form['city'])==0:
-    session['myprofile']['city']=request.form['city']
+    myprofile['city']=request.form['city']
 
   if not len(request.form['bday'])==0:
-    session['myprofile']['bday']=request.form['bday']
+    myprofile['bday']=request.form['bday']
 
   if not request.form['pgender']=='-1':
-    session['myprofile']['pgender']=int(request.form['pgender'])
+    myprofile['pgender']=int(request.form['pgender'])
 
   if not len(request.form['pcity'])==0:
-    session['myprofile']['pcity']=request.form['pcity']
+    myprofile['pcity']=request.form['pcity']
 
   if not len(request.form['page'])==0:
-    session['myprofile']['page']=int(request.form['page'])
+    myprofile['page']=int(request.form['page'])
 
   signup_query="UPDATE users SET passwd=(%s), gender=(%s), name=(%s),self_description=(%s), city=(%s), birthday=(%s), p_gender=(%s),p_city=(%s),p_age=(%s) WHERE uid=(%s);"
-  data= (session['myprofile']['password'], session['myprofile']['gender'], session['myprofile']['username'], session['myprofile']['self_desc'],session['myprofile']['city'], session['myprofile']['bday'],session['myprofile']['pgender'], session['myprofile']['pcity'],session['myprofile']['page'],session['uid'],)
+  data= (myprofile['password'], myprofile['gender'], myprofile['username'], myprofile['self_desc'],myprofile['city'], myprofile['bday'],myprofile['pgender'], myprofile['pcity'],myprofile['page'],session['uid'],)
   g.conn.execute(signup_query,data)
   return render_template('success.html') 
 
@@ -408,8 +631,9 @@ def signup():
 def success():
 	return home()
 
-
 if __name__ == "__main__":
+  #app.debug = True
+  #app.run()
   import click
 
   @click.command()

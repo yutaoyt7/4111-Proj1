@@ -1,0 +1,55 @@
+<html lang="en">
+<body>
+<header>
+  <h1>My Events</h1>
+  <h2>Started Events</h2>
+</header>
+
+{% for event in startevents%}
+<div style="float:left;">
+    <form float: left action="/viewstartevent" method="post">
+    {{event['event_date']}}: {{event['event_title']}}
+    <input type="hidden" name='event_date' value={{event['event_date']}}>
+    <input type="hidden" name='event_title' value={{event['event_title']}}>
+    <input type="hidden" name='eid' value={{event['eid']}}>
+    <input type="submit" value="View Events">
+</form>
+</div>
+<form float: left action="/deleteevent" method="post">
+    <input type="hidden" name='eid' value={{event['eid']}}>
+    <input type="submit" value="delete">
+</form>
+{% endfor %}
+</div>
+<br>
+<header>
+    <h2>Invited Events</h2>
+  </header>
+{% for event in sharedevents%}
+<div style="float:left;">
+    <form float: left action="/viewsharedevent" method="post">
+    {{event['event_date']}}: {{event['event_title']}}
+    <input type="hidden" name='event_date' value={{event['event_date']}}>
+    <input type="hidden" name='event_title' value={{event['event_title']}}>
+    <input type="hidden" name='eid' value={{event['eid']}}>
+    <input type="submit" value="View Events">
+</form>
+</div>
+<form float: left action="/deleteevent" method="post">
+    <input type="hidden" name='eid' value={{event['eid']}}>
+    <input type="submit" value="delete">
+</form>
+{% endfor %}
+<h2>Create Event</h2>
+<form action="/addevent" method="post">
+    <input style="width:500px;overflow:auto" type="text" name="event_title">
+    <input type="date" id="start" name="event_date"
+       value="2022-11-14")>
+    <input type="submit" value="Create Event">
+</form>
+<br>
+<form action="/success" method="post">
+<input type="submit" value="home">
+</form>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<html lang="en">
+<body>
+<header>
+  <h1>{{startevent['event_title']}}</h1>
+</header>
+<p>Date: {{startevent['event_date']}}</p>
+<p>Location: {{startevent['location']}}</p>
+<p>Description:{{startevent['description']}}</p>
+<p>
+
+Participants:
+ 
+{% for participant in get_participant%}
+<form float: left action="/uninvite" method="post">
+{{participant['invitee']}}
+<input type="hidden" name='eid' value={{startevent['eid']}}>
+<input type="hidden" name='uid' value={{participant['uid']}}>
+<input type="submit" value="Uninvite">
+</form>
+
+{%endfor%}
+
+<form action="/modifymyeventpage" method="post">
+    <input type="hidden" name='eid' value={{startevent['eid']}}>
+    <input type="submit" value="Modify Event">
+</form>
+
+<form action="/inviteuserpage" method="post">
+    <input type="hidden" name='eid' value={{startevent['eid']}}>
+    <input type="hidden" name='event_title' value={{startevent['event_title']}}>
+    <input type="submit" value="Invite">
+</form>
+<form>
+    <input type="button" value="Return" onclick="history.back()">
+   </form>
+</body>
+</html>

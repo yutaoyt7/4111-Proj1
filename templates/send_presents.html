@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<header>
+  <h1>Send Present to {{receiver_info['name']}} </h1>
+</header>
+
+<form action="/sendpresent" method="post">
+
+<p> 
+  <SELECT name="present">
+    <OPTION Value="rose">rose</OPTION>
+    <OPTION Value="car">car</OPTION>
+    <OPTION Value="ring">ring</OPTION>
+    <OPTION Value="kiss">kiss</OPTION>
+    <OPTION Value="rocket">rocket</OPTION>
+    <OPTION Value="airplane">airplane</OPTION>
+  </SELECT>
+</p>
+<p>
+    number <input type="number" name="num_sent" placeholder="">
+    <input type="hidden" name='uid' value={{receiver_info['uid']}}>
+
+</p>
+<p>  <input type="submit" value="send"> </p>
+</form>
+<div style="float:left;">
+  <form>
+    <input type="button" value="Return" onclick="history.back()">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+  <input type="submit" value="home">
+</form>
+</div>
+</body>
+</html>

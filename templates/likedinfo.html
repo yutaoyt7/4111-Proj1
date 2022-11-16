@@ -1,0 +1,47 @@
+<html lang="en">
+<body>
+<header>
+  <h1>My Likes</h1>
+  <h2>People Who Liked Me</h2>
+</header>
+{% for people in people_liked%}
+<div style="float:left;">
+    <form float: left action="/getuserinformation" method="post">
+    {{people['name']}}
+    <input type="hidden" name='uid' value={{people['uid']}}>
+    <input type="submit" value="View Profile">
+</form>
+</div>
+
+{% endfor %}
+</div>
+<br>
+<header>
+    <h2>People I Liked</h2>
+  </header>
+{% for people in liked_people%}
+<div style="float:left;">
+    <form float: left action="/getuserinformation" method="post">
+    {{people['name']}}
+    <input type="hidden" name='uid' value={{people['uid']}}>
+    <input type="submit" value="View Profile">
+</form>
+</div>
+    <form float: left action="/removelikes" method="post">
+    <input type="hidden" name='uid' value={{people['uid']}}>
+    <input type="submit" value="Remove Like">
+</form>
+
+{% endfor %}
+<div style="float:left;">
+<form action="/myprofilepage" method="post">
+        <input type="submit" value="return">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+    <input type="submit" value="home">
+</form>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<header>
+  <h1>Modify Event</h1>
+</header>
+
+<form action="/modifystartevent" method="post">
+<input type="hidden" name='eid' value={{startevent['eid']}}>
+<p> Event Title <input type="text" name="event_title" placeholder=""> </p>
+<p> Date  <input type="Date" name="event_date" placeholder="YYYY-MM-DD"> </p>
+<p> Description <input type="text" name="description" placeholder=""> </p>
+<p> Location <input type="text" name="location" placeholder=""> </p>
+<p>  <input type="submit" value="modify"> </p>
+</form>
+<div style="float:left;">
+  <form>
+    <input type="button" value="Return" onclick="history.back()">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+  <input type="submit" value="home">
+</form>
+</div>
+</body>
+</html>

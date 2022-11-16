@@ -1,0 +1,42 @@
+<html lang="en">
+<body>
+<header>
+  <h1>My Presents</h1>
+  <h2>Presents Sent</h2>
+</header>
+{% for present in presents_sent%}
+    <form float: left action="/unsendpresent" method="post">
+    {{present['receiver']}}: {{present['p_type']}}, {{present['num_sent']}}, {{present['time_sent']}}
+    <input type="hidden" name='uid' value={{present['receiver_id']}}>
+    <input type="submit" value="unsend">
+</form>
+
+{% endfor %}
+
+<br>
+<header>
+    <h2>Presents Received</h2>
+  </header>
+{% for present in presents_received%}
+    <form float: left action="/getuserinformation" method="post">
+    {{present['sender']}}: {{present['p_type']}}, {{present['num_sent']}}, {{present['time_sent']}}
+    <input type="hidden" name='uid' value={{present['sender_id']}}>
+    <input type="submit" value="View Profile">
+</form>
+
+
+{% endfor %}
+
+<div style="float:left;">
+  <form>
+    <input type="button" value="Return" onclick="history.back()">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+  <input type="submit" value="home">
+</form>
+</div>
+
+</body>
+</html>

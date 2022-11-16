@@ -18,8 +18,28 @@
 </form>
 </div>
 <div style="float:left;">
-<form action="/success" method="post">
-        <input type="submit" value="home">
+    <form action="/likeuser" method="post">
+            <input type="hidden" name='uid' value={{uid}}>
+            <input type="hidden" name='username' value={{username}}>
+            <input type="submit" value="Like">
+    </form>
+    </div>
+<div >
+    <form action="/sendpresentpage" method="post">
+            <input type="hidden" name='uid' value={{uid}}>
+            <input type="hidden" name='username' value={{username}}>
+            <input type="submit" value="Send Presents">
+    </form>
+    </div>
+    <div style="float:left;">
+        <form action="/myprofilepage" method="post">
+                <input type="submit" value="return">
+        </form>
+        </div>
+        <div style="float:left;">
+        <form action="/success" method="post">
+            <input type="submit" value="home">
+        </form>
 </form>
 </div>
 </html>

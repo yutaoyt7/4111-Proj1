@@ -1,0 +1,22 @@
+<html lang="en">
+<body>
+<header>
+  <h1>{{sharedevent['event_title']}}</h1>
+</header>
+<p>Date: {{sharedevent['event_date']}}</p>
+<p>Location: {{sharedevent['location']}}</p>
+<p>Description:{{sharedevent['description']}}</p>
+<p>Invitor: {{sharedevent['name']}}</p>
+
+<p>
+    Participants: 
+    {% for participant in get_participant%}
+    {{participant['invitee']}}
+    {%endfor%}
+</p>
+
+<form>
+    <input type="button" value="Return" onclick="history.back()">
+</form>
+</body>
+</html>
