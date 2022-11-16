@@ -1,0 +1,20 @@
+<html lang="en">
+<body>
+<header>
+  <h1>Users Page {{page_num}}</h1>
+</header>
+{% for user in users%}
+<form action="/getuserinformation" method="post">
+<p>{{user['name']}}<input type="hidden" name='uid' value={{user['uid']}}><input type="hidden" name='name' value={{user['name']}}> <input type="submit" value="View Profile"></p>
+</form>
+{% endfor %}
+<form action="/userspage" method="post">
+{% for n in count%}
+<input type="submit" name='page_num' value={{n}}>
+{% endfor %}
+</form>
+<form action="/success" method="post">
+    <input type="submit" value="home">
+</form>
+</body>
+</html>

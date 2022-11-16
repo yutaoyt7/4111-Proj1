@@ -1,0 +1,43 @@
+<html lang="en">
+<body>
+<header>
+  <h1>Chat with {{other['name']}}</h1>
+</header>
+<div style="height:600px;width:500px;overflow:auto;border:1px solid ;padding:2%">
+    {% for message in messages%}
+    <p>{{message['name']}}: {{message['content']}} </p>
+    {% endfor %}
+</div>
+{% if Liked %}
+<form action="/sendmessage" method="post">
+  <p>
+    <input type="hidden" name='uid' value={{other['uid']}}>
+    <input type="hidden" name='username' value={{other['name']}}>
+    <input style="width:500px;overflow:auto" type="text" name="content">
+    <input type="submit" value="Send">
+  </p>
+</form>
+{% else %}
+<p>
+You must be liked by this person before able to send messages.
+</p>
+{% endif %}
+<div style="float:left;">
+<form action="/chat" method="post">
+    <input type="hidden" name='uid' value={{other['uid']}}>
+    <input type="hidden" name='username' value={{other['name']}}>
+    <input type="submit" value="Refresh">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+  <input type="submit" value="home">
+</form>
+</div>
+<div style="float:left;">
+<form action="/userspage" method="post">
+  <input type="submit" value="Users">
+</form>
+</div>
+</body>
+</html>

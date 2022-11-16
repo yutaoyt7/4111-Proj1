@@ -1,0 +1,48 @@
+<html lang="en">
+<body>
+<header>
+  <h1>Posts Page {{page_num}}</h1>
+</header>
+{% for post in posts%}
+<div style="float:left;">
+    <form float: left action="/comments" method="post">
+    {{post['name']}}: {{post['content']}}
+    <input type="hidden" name='name' value={{post['name']}}>
+    <input type="hidden" name='content' value={{post['content']}}>
+    <input type="hidden" name='pid' value={{post['pid']}}>
+    <input type="submit" value="View Post">
+</form>
+</div>
+<div style="float:left;">
+{% if post['uid']==session['uid']%}
+<form float: left action="/deletepost" method="post">
+    <input type="hidden" name='pid' value={{post['pid']}}>
+    <input type="hidden" name='page_num' value={{page_num}}>
+    <input type="submit" value="delete">
+</form>
+{% endif %}
+</div>
+<form action="/likepost" method="post">
+    <p> &nbsp&nbsp {{post['nlikes']}} Likes
+    <input type="hidden" name='pid' value={{post['pid']}}>
+    <input type="hidden" name='page_num' value={{page_num}}>
+    <input type="submit" value="Like"></p>
+</form>
+{% endfor %}
+
+<form action="/posts" method="post">
+{% for n in count%}
+<input type="submit" name='page_num' value={{n}}>
+{% endfor %}
+</form>
+
+<form action="/addpost" method="post">
+      <input style="width:500px;overflow:auto" type="text" name="content">
+      <input type="submit" value="Post">
+</form>
+
+<form action="/success" method="post">
+    <input type="submit" value="home">
+</form>
+</body>
+</html>

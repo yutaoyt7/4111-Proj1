@@ -1,0 +1,25 @@
+<html>
+<header><h1>Users Profile Page</h1></header>
+
+<p> Username: {{username}} </p>
+<p> Gender: {{genders[gender-1]}}</p>
+<p> Self Description: {{self_desc}}</p>
+<p> City: {{city}}  </p>
+<p> Birthday: {{bday}}</p>
+<p> Gender Preference: {{genders[pgender-1]}}</p>
+<p> City Preference: {{pcity}}</p>
+<p> Age Preference: {{page}}</p>
+
+<div style="float:left;">
+<form action="/chat" method="post">
+        <input type="hidden" name='uid' value={{uid}}>
+        <input type="hidden" name='username' value={{username}}>
+        <input type="submit" value="Chat">
+</form>
+</div>
+<div style="float:left;">
+<form action="/success" method="post">
+        <input type="submit" value="home">
+</form>
+</div>
+</html>
